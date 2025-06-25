@@ -1,97 +1,100 @@
 package CRUD_MySQL;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
-/**
- *
- * @author jquezada
- */
-public class PersonaDAO  {
+public class PersonaDAO {
 
-    private static final String URL_MYSQL = "jdbc:mysql://localhost:3306/mydb";
-    private static final String USERNAME = "root";
-    private static final String PASSWORD = "";
+    private Connection conexion;
 
-    private static Connection connection;
-
-    PersonaDAo() {
+    /**
+     * Constructor: establece la conexión a la base de datos.
+     */
+    public PersonaDAO() throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+        conectar();
     }
 
-    public static Connection getConnection() throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        if (connection == null) {
-            try {
-                // load and register JDBC driver for MySQL
-                Class.forName("com.mysql.cj.jdbc.Driver");
-                connection = DriverManager.getConnection(URL_MYSQL, USERNAME, PASSWORD);
-            } catch (SQLException esql) {
-                System.out.println("" + esql.getMessage());
-                return null;;
-            }
-        }
-        return connection;
+    /**
+     * Método para conectar a la base de datos MySQL.
+     * Cambia los valores según tu base local o remota (ej. db4free).
+     */
+    private void conectar() throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+        Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
+        conexion = DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/crud_java?useSSL=false&serverTimezone=UTC", 
+            "root", // Usuario
+            "clave123"      // Contraseña
+        );
     }
 
-    public void create(Persona persona) throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    /**
+     * Inserta una nueva persona en la tabla.
+     */
+    public void insertar(Persona persona) {
         String sql = "INSERT INTO personas (nombre, edad) VALUES (?, ?)";
-        PreparedStatement statement = getConnection().prepareStatement(sql);
-        statement.setString(1, persona.getNombre());
-        statement.setInt(2, persona.getEdad());
-        statement.executeUpdate();
-    }
-
-    public Persona read(int id) throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        String sql = "SELECT * FROM personas WHERE id = ?";
-        PreparedStatement statement = getConnection().prepareStatement(sql);
-        statement.setInt(1, id);
-        ResultSet resultSet = statement.executeQuery();
-        if (resultSet.next()) {
-            Persona persona = new Persona();
-            persona.setId(resultSet.getInt("id"));
-            persona.setNombre(resultSet.getString("nombre"));
-            persona.setEdad(resultSet.getInt("edad"));
-            return persona;
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setString(1, persona.getNombre());
+            ps.setInt(2, persona.getEdad());
+            ps.executeUpdate();
+            System.out.println("✅ Persona insertada exitosamente.");
+        } catch (SQLException e) {
+            System.err.println("❌ Error al insertar persona: " + e.getMessage());
         }
-        return null;;
     }
 
-    public void update(Persona persona) throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        String sql = "UPDATE personas SET nombre = ?, edad = ? WHERE id = ?";
-        PreparedStatement statement = getConnection().prepareStatement(sql);
-        statement.setString(1, persona.getNombre());
-        statement.setInt(2, persona.getEdad());
-        statement.setInt(3, persona.getId());
-        statement.executeUpdate();
-    }
-
-    public void delete(int id) throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        String sql = "DELETE FROM personas WHERE id = ?";
-        PreparedStatement statement = getConnection().prepareStatement(sql);
-        statement.setInt(1, id);
-        statement.executeUpdate();
-    }
-
-    public List<Persona> getAll() throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    /**
+     * Lista todas las personas registradas en la tabla.
+     */
+    public void listar() {
         String sql = "SELECT * FROM personas";
-        List<Persona> personas;
-        try {
-            Statement statement = getConnection().createStatement(); 
-            ResultSet resultSet = statement.executeQuery(sql);
-            personas = new ArrayList<>();
-            while (resultSet.next()) {
-                Persona persona = new Persona();
-                persona.setId(resultSet.getInt("id"));
-                persona.setNombre(resultSet.getString("nombre"));
-                persona.setEdad(resultSet.getInt("edad"));
+        try (Statement stmt = conexion.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
 
-                personas.add(persona);
+            System.out.println("📋 Lista de personas:");
+            while (rs.next()) {
+                System.out.println("ID: " + rs.getInt("id") +
+                                   ", Nombre: " + rs.getString("nombre") +
+                                   ", Edad: " + rs.getInt("edad"));
             }
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | SQLException e) {
-            System.out.println("" + e.getMessage());
-            return null;
+        } catch (SQLException e) {
+            System.err.println("❌ Error al listar personas: " + e.getMessage());
         }
-        return personas;
     }
 
+    /**
+     * Actualiza una persona por su ID.
+     */
+    public void actualizar(Persona persona) {
+        String sql = "UPDATE personas SET nombre = ?, edad = ? WHERE id = ?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setString(1, persona.getNombre());
+            ps.setInt(2, persona.getEdad());
+            ps.setInt(3, persona.getId());
+            int filas = ps.executeUpdate();
+            if (filas > 0) {
+                System.out.println("✅ Persona actualizada exitosamente.");
+            } else {
+                System.out.println("⚠️ No se encontró una persona con ese ID.");
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Error al actualizar persona: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Elimina una persona por su ID.
+     */
+    public void eliminar(int id) {
+        String sql = "DELETE FROM personas WHERE id = ?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            int filas = ps.executeUpdate();
+            if (filas > 0) {
+                System.out.println("✅ Persona eliminada exitosamente.");
+            } else {
+                System.out.println("⚠️ No se encontró una persona con ese ID.");
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Error al eliminar persona: " + e.getMessage());
+        }
+    }
 }

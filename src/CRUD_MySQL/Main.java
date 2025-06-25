@@ -1,138 +1,74 @@
 package CRUD_MySQL;
 
-import java.sql.*;
-import java.util.List;
+import java.sql.SQLException;
 import java.util.Scanner;
 
-/**
- *
- * @author jquezada
- */
 public class Main {
-
-    private static final PersonaDAO dao = new PersonaDAO();
-
-    public static void main(String[] args) throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
         int opcion;
+
         do {
             mostrarMenu();
-            opcion = leerOpcion();
-            procesarOpcion(opcion);
-        } while (opcion != 6);
+            System.out.print("Seleccione una opción: ");
+            opcion = scanner.nextInt();
+            scanner.nextLine(); // Limpiar buffer
+            try {
+                procesarOpcion(opcion); // <- esto debe estar fuera del main
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+
+        } while (opcion != 5);
     }
 
     private static void mostrarMenu() {
-        System.out.println("**CRUD Personas**");
-        System.out.println("1. Crear persona");
+        System.out.println("\n=== Menú ===");
+        System.out.println("1. Insertar persona");
         System.out.println("2. Listar personas");
-        System.out.println("3. Leer persona");
-        System.out.println("4. Actualizar persona");
-        System.out.println("5. Eliminar persona");
-        System.out.println("6. Salir");
+        System.out.println("3. Actualizar persona");
+        System.out.println("4. Eliminar persona");
+        System.out.println("5. Salir");
     }
 
-    private static int leerOpcion() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Introduzca una opción: ");
-        return scanner.nextInt();
-        scanner.nextLine();  // Limpieza de buffer    }
-
+    // ⛔ Estaba mal ubicada antes (dentro de main), ya está corregida
     private static void procesarOpcion(int opcion) throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+        Scanner scanner = new Scanner(System.in);
+        PersonaDAO dao = new PersonaDAO();
+
         switch (opcion) {
             case 1:
-                crearPersona();
+                System.out.print("Nombre: ");
+                String nombre = scanner.nextLine();
+                System.out.print("Edad: ");
+                int edad = scanner.nextInt();
+                scanner.nextLine(); // limpiar buffer
+                dao.insertar(new Persona(nombre, edad));
                 break;
             case 2:
-                listarPersonas();
+                dao.listar();
                 break;
             case 3:
-                leerPersona();
+                System.out.print("ID de la persona a actualizar: ");
+                int idActualizar = scanner.nextInt();
+                scanner.nextLine();
+                System.out.print("Nuevo nombre: ");
+                String nuevoNombre = scanner.nextLine();
+                System.out.print("Nueva edad: ");
+                int nuevaEdad = scanner.nextInt();
+                dao.actualizar(new Persona(idActualizar, nuevoNombre, nuevaEdad));
                 break;
             case 4:
-                actualizarPersona();
+                System.out.print("ID de la persona a eliminar: ");
+                int idEliminar = scanner.nextInt();
+                dao.eliminar(idEliminar);
                 break;
             case 5:
-                eliminarPersona();
-                break;
-            case 6:
-                System.out.println("Saliendo del programa...");
+                System.out.println("Saliendo...");
                 break;
             default:
                 System.out.println("Opción no válida.");
         }
     }
-
-    private static void crearPersona() throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Introduzca el nombre: ");
-        String nombre = scanner.nextLine();
-        System.out.print("Introduzca la edad: ");
-        int edad = scanner.nextInt();
-        scanner.nextLine();  // Limpieza de buffer
-        Persona persona = new Persona();
-        persona.setNombre(nombre);
-        persona.setEdad(edad);
-
-        dao.create(persona);
-        System.out.println("Persona creada correctamente.");
-    }
-
-    private static void leerPersona() throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Introduzca el ID de la persona: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();  // Limpieza de buffer
-        Persona persona = dao.read(id);
-
-        if (persona != null) {
-            System.out.println("**Persona:**");
-            System.out.println("ID: " + persona.getId());
-            System.out.println("Nombre: " + persona.getNombre());
-            System.out.println("Edad: " + persona.getEdad());
-        } else {
-            System.out.println("Persona no encontrada.");
-        }
-    }
-
-    private static void actualizarPersona() throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Introduzca el ID de la persona: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();  // Limpieza de buffer        leerPersona();
-        System.out.print("Introduzca el nombre: ");
-        String nombre = scanner.nextLine();
-        System.out.println("\n");
-        System.out.print("Introduzca la edad: ");
-        int edad = scanner.nextInt();
-        scanner.nextLine();  // Limpieza de buffer
-        Persona persona = new Persona();
-        persona.setId(id);
-        persona.setNombre(nombre);
-        persona.setEdad(edad);
-
-        dao.update(persona);
-        System.out.println("Persona actualizada correctamente.");
-    }
-
-    private static void eliminarPersona() throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Introduzca el ID de la persona: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();  // Limpieza de buffer
-        dao.delete(id);
-        System.out.println("Persona eliminada correctamente.");
-    }
-
-    private static void listarPersonas() throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        
-        List<Persona> personas = dao.getAll();
-        
-        for (Persona persona : personas) {
-            System.out.println("ID: " + persona.getId());
-            System.out.println("Nombre: " + persona.getNombre());
-            System.out.println("Edad: " + persona.getEdad());
-            System.out.println();
-        }
-    }
-
 }
+
